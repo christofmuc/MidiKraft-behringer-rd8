@@ -23,7 +23,7 @@ ENDIF()
 
 # Define the sources for the static library
 set(Sources
-	Plugin.h Plugin.cpp
+	RD8Plugin.h RD8Plugin.cpp
 	RD8.h RD8.cpp
 	RD8Pattern.h RD8Pattern.cpp
 	README.md

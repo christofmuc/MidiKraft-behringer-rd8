@@ -1,4 +1,4 @@
-#include "Plugin.h"
+#include "RD8Plugin.h"
 
 midikraft::BehringerRD8 * CreateObjectInstance()
 {
