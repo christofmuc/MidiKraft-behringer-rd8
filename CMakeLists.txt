@@ -23,6 +23,7 @@ ENDIF()
 
 # Define the sources for the static library
 set(Sources
+	Plugin.h Plugin.cpp
 	RD8.h RD8.cpp
 	RD8Pattern.h RD8Pattern.cpp
 	README.md
@@ -30,9 +31,9 @@ set(Sources
 )
 
 # Setup library
-add_library(midikraft-behringer-rd8 ${Sources})
-target_include_directories(midikraft-behringer-rd8 PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include PRIVATE ${JUCE_INCLUDES})
-target_link_libraries(midikraft-behringer-rd8 juce-utils midikraft-base)
+add_library(midikraft-behringer-rd8 SHARED ${Sources})
+target_include_directories(midikraft-behringer-rd8 PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
+target_link_libraries(midikraft-behringer-rd8 juce-utils midikraft-base ${JUCE_LIBRARIES})
 
 # Pedantic about warnings
 if (MSVC)
