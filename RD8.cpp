@@ -49,7 +49,7 @@ namespace midikraft {
 		return "Behringer RD8";
 	}
 
-	bool BehringerRD8::isOwnSysex(MidiMessage const &message)
+	bool BehringerRD8::isOwnSysex(MidiMessage const &message) const
 	{
 		if (message.isSysEx() && message.getSysExDataSize() > 3) {
 			return message.getSysExData()[0] == 0x00 &&
@@ -59,6 +59,22 @@ namespace midikraft {
 			//message.getSysExData()[4] == deviceID_; Ignored
 		}
 		return false;
+	}
+
+	int BehringerRD8::numberOfBanks() const
+	{
+		return 1;
+	}
+
+	int BehringerRD8::numberOfPatches() const
+	{
+		return 1;
+	}
+
+	std::string BehringerRD8::friendlyBankName(MidiBankNumber bankNo) const
+	{
+		ignoreUnused(bankNo);
+		return "Bank";
 	}
 
 	std::vector<uint8> BehringerRD8::createSysexMessage(uint8 deviceID, uint8 messageType, uint8 messageID) const {
@@ -72,14 +88,16 @@ namespace midikraft {
 		return message;
 	}
 
-	BehringerRD8::MessageID BehringerRD8::getMessageID(MidiMessage const &midiMessage) {
-		jassert(isOwnSysex(midiMessage));
-		if (midiMessage.getSysExDataSize() > 6) {
-			return MessageID({ midiMessage.getSysExData()[5], midiMessage.getSysExData()[6] });
+	BehringerRD8::MessageID BehringerRD8::getMessageID(MidiMessage const &midiMessage) const {
+		if (isOwnSysex(midiMessage)) {
+			if (midiMessage.getSysExDataSize() > 6) {
+				return MessageID({ midiMessage.getSysExData()[5], midiMessage.getSysExData()[6] });
+			}
+			else {
+				return MessageID({ 0, 0 }); // Invalid message
+			}
 		}
-		else {
-			return MessageID({ 0, 0 }); // Invalid message
-		}
+		return { 0xff, 0xff };
 	}
 
 	int BehringerRD8::numberOfSongs() const
@@ -361,6 +379,17 @@ namespace midikraft {
 	bool BehringerRD8::getLocalControl() const
 	{
 		return true;
+	}
+
+	std::shared_ptr<midikraft::DataFile> BehringerRD8::patchFromPatchData(const Synth::PatchData &data, MidiProgramNumber place) const
+	{
+		ignoreUnused(data, place);
+		throw std::logic_error("The method or operation is not implemented.");
+	}
+
+	std::vector<midikraft::DataFileLoadCapability::DataFileDescription> BehringerRD8::dataTypeNames() const
+	{
+		return {};
 	}
 
 }

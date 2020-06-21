@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Synth.h"
+#include "DataFileLoadCapability.h"
 #include "StepSequencer.h"
 #include "MasterkeyboardCapability.h"
 #include "SoundExpanderCapability.h"
@@ -35,11 +37,14 @@ namespace midikraft {
 		virtual std::vector<MidiMessage> dataToDumpSysex(const T &patch) const = 0;
 	};
 
-	class BehringerRD8 : public StepSequencer, public SoundExpanderCapability, public MasterkeyboardCapability {
+	class BehringerRD8 : public Synth, public SimpleDiscoverableDevice, public SoundExpanderCapability, public MasterkeyboardCapability, public DataFileLoadCapability {
 	public:
 		struct MessageID { uint8 messageType, messageID; };
 
 		BehringerRD8();
+
+		virtual std::shared_ptr<DataFile> patchFromPatchData(const Synth::PatchData &data, MidiProgramNumber place) const override;
+		virtual bool isOwnSysex(MidiMessage const &message) const override;
 
 		// Implementation of DiscoverableDevice interface
 		virtual std::vector<juce::MidiMessage> deviceDetect(int channel) override;
@@ -53,25 +58,23 @@ namespace midikraft {
 		// Helper functions
 		std::vector<uint8> createSysexMessage(uint8 deviceID, uint8 messageType, uint8 messageID) const;
 		std::vector<uint8> createRequestMessage(MessageID id) const;
-
-		static bool isOwnSysex(MidiMessage const &message);
-		static MessageID getMessageID(MidiMessage const &midiMessage);
-
-		// Implementation of sequencer interface
-		virtual int numberOfSongs() const override;
-		virtual int numberOfPatternsPerSong() const override;
+		MessageID getMessageID(MidiMessage const &midiMessage) const;
 
 		// DataFileLoadCapability
 		virtual std::vector<MidiMessage> requestDataItem(int itemNo, int dataTypeID) override;
 		virtual int numberOfDataItemsPerType(int dataTypeID) const override;
 		virtual bool isDataFile(const MidiMessage &message, int dataTypeID) const override;
 		virtual std::vector<std::shared_ptr<DataFile>> loadData(std::vector<MidiMessage> messages, int dataTypeID) const override;
-		virtual std::shared_ptr<StepSequencerPattern> activePattern() override;
-		virtual std::vector<std::shared_ptr<TypedNamedValue>> properties() override;
+		std::vector<DataFileDescription> dataTypeNames() const override;
+
+		// Implementation of sequencer interface
+		virtual int numberOfSongs() const; // override;
+		virtual int numberOfPatternsPerSong() const; // override;
+		virtual std::shared_ptr<StepSequencerPattern> activePattern(); // override;
+		virtual std::vector<std::shared_ptr<TypedNamedValue>> properties(); // override;
 
 		// SoundExpanderCapability
 		virtual bool canChangeInputChannel() const override;
-
 
 		virtual void changeInputChannel(MidiController *controller, MidiChannel channel, std::function<void()> onFinished) override;
 		virtual MidiChannel getInputChannel() const override;
@@ -85,6 +88,11 @@ namespace midikraft {
 		virtual bool hasLocalControl() const override;
 		virtual void setLocalControl(MidiController *controller, bool localControlOn) override;
 		virtual bool getLocalControl() const override;
+		
+		//TODO - this should go away HasBanksCapability
+		int numberOfBanks() const override;
+		int numberOfPatches() const override;
+		std::string friendlyBankName(MidiBankNumber bankNo) const override;
 
 	private:
 		void globalSettingsOperation(MidiController *controller, std::function<void(std::shared_ptr<RD8GlobalSettings> settingsData)> operation);

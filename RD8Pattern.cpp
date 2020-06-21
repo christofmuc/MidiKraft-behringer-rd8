@@ -17,8 +17,8 @@ namespace midikraft {
 
 	bool RD8DataFile::isDataDump(const MidiMessage & message) const
 	{
-		if (BehringerRD8::isOwnSysex(message)) {
-			auto id = BehringerRD8::getMessageID(message);
+		if (rd8_->isOwnSysex(message)) {
+			auto id = rd8_->getMessageID(message);
 			if (id.messageType == RD8_DATA_MESSAGE && id.messageID == midiFileType_) {
 				return true;
 			}
