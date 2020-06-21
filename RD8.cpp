@@ -10,11 +10,11 @@ namespace midikraft {
 	{
 	}
 
-	juce::MidiMessage BehringerRD8::deviceDetect(int channel)
+	std::vector<juce::MidiMessage> BehringerRD8::deviceDetect(int channel)
 	{
 		ignoreUnused(channel);
 		// How does the detection of other device IDs work, if there are multiple RD8s?
-		return MidiHelpers::sysexMessage(createSysexMessage(0, RD8_FIRMWARE_MESSAGE, RD8_REQUEST));
+		return { MidiHelpers::sysexMessage(createSysexMessage(0, RD8_FIRMWARE_MESSAGE, RD8_REQUEST)) };
 	}
 
 	int BehringerRD8::deviceDetectSleepMS()
@@ -82,12 +82,12 @@ namespace midikraft {
 		}
 	}
 
-	int BehringerRD8::numberOfSongs()
+	int BehringerRD8::numberOfSongs() const
 	{
 		return 16;
 	}
 
-	int BehringerRD8::numberOfPatternsPerSong()
+	int BehringerRD8::numberOfPatternsPerSong() const
 	{
 		return 16;
 	}
@@ -122,7 +122,7 @@ namespace midikraft {
 		return std::vector<MidiMessage>({ MidiHelpers::sysexMessage(message) });
 	}
 
-	int BehringerRD8::numberOfDataItemsPerType(int dataTypeID)
+	int BehringerRD8::numberOfDataItemsPerType(int dataTypeID) const
 	{
 		switch (dataTypeID) {
 		case RD8_STORED_PATTERN_REQUEST: return numberOfSongs() * numberOfPatternsPerSong();
@@ -136,27 +136,27 @@ namespace midikraft {
 		return 0;
 	}
 
-	bool BehringerRD8::isDataFile(const MidiMessage &message, int dataTypeID)
+	bool BehringerRD8::isDataFile(const MidiMessage &message, int dataTypeID) const
 	{
 		switch (dataTypeID) {
 		case RD8_STORED_PATTERN_REQUEST: {
-			RD8StoredPattern pattern(*this);
+			RD8StoredPattern pattern(this);
 			return pattern.isDataDump(message);
 		}
 		case RD8_LIVE_PATTERN_REQUEST: {
-			RD8LivePattern pattern(*this);
+			RD8LivePattern pattern(this);
 			return pattern.isDataDump(message);
 		}
 		case RD8_STORED_SONG_REQUEST: {
-			RD8StoredSong song(*this);
+			RD8StoredSong song(this);
 			return song.isDataDump(message);
 		}
 		case RD8_LIVE_SONG_REQUEST: {
-			RD8LiveSong song(*this);
+			RD8LiveSong song(this);
 			return song.isDataDump(message);
 		}
 		case RD8_GLOBAL_SETTINGS_REQUEST: {
-			RD8GlobalSettings settings(*this);
+			RD8GlobalSettings settings(this);
 			return settings.isDataDump(message);
 		}
 		default:
@@ -165,49 +165,54 @@ namespace midikraft {
 		}
 	}
 
-	void BehringerRD8::loadData(std::vector<MidiMessage> messages, int dataTypeID)
+	std::vector<std::shared_ptr<DataFile>> BehringerRD8::loadData(std::vector<MidiMessage> messages, int dataTypeID) const
 	{
+		std::vector<std::shared_ptr<DataFile>> result;
 		for (const auto& message : messages) {
 			if (isDataFile(message, dataTypeID)) {
 				std::shared_ptr<RD8DataFile> data;
 				auto ID = getMessageID(message);
 				switch (ID.messageID) {
 				case RD8_LIVE_PATTERN_RESPONSE:
-					data = std::make_shared<RD8LivePattern>(*this);
+					data = std::make_shared<RD8LivePattern>(this);
 					if (data->dataFromSysex({ message })) {
-						Sysex::saveSysexIntoNewFile(R"(d:\christof\music\Behringer-RD8\sysex)", "LivePattern", { message });
-						auto pattern = std::dynamic_pointer_cast<RD8LivePattern>(data);
-						livePattern_ = pattern->getPattern();
+						//Sysex::saveSysexIntoNewFile(R"(d:\christof\music\Behringer-RD8\sysex)", "LivePattern", { message });
+						result.push_back(data);
 					}
 					break;
 				case RD8_STORED_PATTERN_RESPONSE:
-					data = std::make_shared<RD8StoredPattern>(*this);
-					Sysex::saveSysexIntoNewFile(R"(d:\christof\music\Behringer-RD8\sysex)", "StoredPattern", { message });
+					data = std::make_shared<RD8StoredPattern>(this);
+					//Sysex::saveSysexIntoNewFile(R"(d:\christof\music\Behringer-RD8\sysex)", "StoredPattern", { message });
 					if (data->dataFromSysex({ message })) {
-						auto pattern = std::dynamic_pointer_cast<RD8StoredPattern>(data);
-						livePattern_ = pattern->getPattern();
+						result.push_back(data);
 					}
 					break;
 				case RD8_LIVE_SONG_RESPONSE:
-					data = std::make_shared<RD8LiveSong>(*this);
-					Sysex::saveSysexIntoNewFile(R"(d:\christof\music\Behringer-RD8\sysex)", "LiveSong", { message });
-					data->dataFromSysex({ message });
+					data = std::make_shared<RD8LiveSong>(this);
+					//Sysex::saveSysexIntoNewFile(R"(d:\christof\music\Behringer-RD8\sysex)", "LiveSong", { message });
+					if (data->dataFromSysex({ message })) {
+						result.push_back(data);
+					}
 					break;
 				case RD8_STORED_SONG_RESPONSE:
-					data = std::make_shared<RD8StoredSong>(*this);
-					Sysex::saveSysexIntoNewFile(R"(d:\christof\music\Behringer-RD8\sysex)", "StoredSong", { message });
-					data->dataFromSysex({ message });
+					data = std::make_shared<RD8StoredSong>(this);
+					//Sysex::saveSysexIntoNewFile(R"(d:\christof\music\Behringer-RD8\sysex)", "StoredSong", { message });
+					if (data->dataFromSysex({ message })) {
+						result.push_back(data);
+					}
 					break;
 				case RD8_GLOBAL_SETTINGS_RESPONSE: {
-					auto settingsData = std::make_shared<RD8GlobalSettings>(*this);
-					Sysex::saveSysexIntoNewFile(R"(d:\christof\music\Behringer-RD8\sysex)", "GlobalSettingsDump", { message });
-					settingsData->dataFromSysex({ message });
-					properties_ = settingsData->globalSettings();
+					auto settingsData = std::make_shared<RD8GlobalSettings>(this);
+					//Sysex::saveSysexIntoNewFile(R"(d:\christof\music\Behringer-RD8\sysex)", "GlobalSettingsDump", { message });
+					if (settingsData->dataFromSysex({ message })) {
+						result.push_back(settingsData);
+					}
 					break;
 				}
 				}
 			}
 		}
+		return result;
 	}
 
 	std::shared_ptr<StepSequencerPattern> BehringerRD8::activePattern()
@@ -260,7 +265,7 @@ namespace midikraft {
 		MidiController::instance()->addMessageHandler(roundtripHandle_, [this, operation](MidiInput *source, const MidiMessage &message) {
 			ignoreUnused(source);
 			if (isDataFile(message, RD8_GLOBAL_SETTINGS_REQUEST)) {
-				auto settingsData = std::make_shared<RD8GlobalSettings>(*this);
+				auto settingsData = std::make_shared<RD8GlobalSettings>(this);
 				if (settingsData->dataFromSysex({ message })) {
 					operation(settingsData);
 				}

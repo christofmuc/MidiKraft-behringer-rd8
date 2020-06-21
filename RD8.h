@@ -42,7 +42,7 @@ namespace midikraft {
 		BehringerRD8();
 
 		// Implementation of DiscoverableDevice interface
-		virtual MidiMessage deviceDetect(int channel) override;
+		virtual std::vector<juce::MidiMessage> deviceDetect(int channel) override;
 		virtual int deviceDetectSleepMS() override;
 		virtual MidiChannel channelIfValidDeviceResponse(const MidiMessage &message) override;
 		virtual bool needsChannelSpecificDetection() override;
@@ -58,12 +58,14 @@ namespace midikraft {
 		static MessageID getMessageID(MidiMessage const &midiMessage);
 
 		// Implementation of sequencer interface
-		virtual int numberOfSongs() override;
-		virtual int numberOfPatternsPerSong() override;
+		virtual int numberOfSongs() const override;
+		virtual int numberOfPatternsPerSong() const override;
+
+		// DataFileLoadCapability
 		virtual std::vector<MidiMessage> requestDataItem(int itemNo, int dataTypeID) override;
-		virtual int numberOfDataItemsPerType(int dataTypeID) override;
-		virtual bool isDataFile(const MidiMessage &message, int dataTypeID) override;
-		virtual void loadData(std::vector<MidiMessage> messages, int dataTypeID) override;
+		virtual int numberOfDataItemsPerType(int dataTypeID) const override;
+		virtual bool isDataFile(const MidiMessage &message, int dataTypeID) const override;
+		virtual std::vector<std::shared_ptr<DataFile>> loadData(std::vector<MidiMessage> messages, int dataTypeID) const override;
 		virtual std::shared_ptr<StepSequencerPattern> activePattern() override;
 		virtual std::vector<std::shared_ptr<TypedNamedValue>> properties() override;
 

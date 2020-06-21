@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SysexDataSerializationCapability.h"
+#include "Patch.h"
 
 #include "StepSequencer.h"
 
@@ -8,9 +9,11 @@ namespace midikraft {
 
 	class BehringerRD8;
 
-	class RD8DataFile : public SysexDataSerializationCapability {
+	class RD8DataFile : public DataFile, public SysexDataSerializationCapability {
 	public:
-		RD8DataFile(BehringerRD8 &rd8, uint8 midiFileType);
+		RD8DataFile(BehringerRD8 const *rd8, uint8 midiFileType);
+
+		virtual std::string name() const override;
 
 		bool isDataDump(const MidiMessage & message) const;
 
@@ -18,7 +21,7 @@ namespace midikraft {
 		std::vector<uint8> unescapeSysex(const std::vector<uint8> &input) const;
 		std::vector<juce::uint8> escapeSysex(const std::vector<uint8> &input) const;
 
-		BehringerRD8 &rd8_; // The data format serialization depends e.g. on the firmware version of the RD8, so we need a concrete instance!
+		BehringerRD8 const *rd8_; // The data format serialization depends e.g. on the firmware version of the RD8, so we need a concrete instance!
 		uint8 midiFileType_; // The MIDI type identifier for this file
 	};
 
@@ -116,7 +119,7 @@ namespace midikraft {
 
 	class RD8LivePattern : public RD8Pattern {
 	public:
-		RD8LivePattern(BehringerRD8 &rd8);
+		RD8LivePattern(BehringerRD8 const *rd8);
 
 		virtual bool dataFromSysex(const std::vector<MidiMessage> &message) override;
 		virtual std::vector<MidiMessage> dataToSysex() const override;
@@ -124,7 +127,7 @@ namespace midikraft {
 
 	class RD8StoredPattern : public RD8Pattern {
 	public:
-		RD8StoredPattern(BehringerRD8 &rd8);
+		RD8StoredPattern(BehringerRD8 const *rd8);
 
 		virtual bool dataFromSysex(const std::vector<MidiMessage> &message) override;
 		virtual std::vector<MidiMessage> dataToSysex() const override;
@@ -145,7 +148,7 @@ namespace midikraft {
 
 	class RD8StoredSong : public RD8Song {
 	public:
-		RD8StoredSong(BehringerRD8 &rd8);
+		RD8StoredSong(BehringerRD8 const *rd8);
 
 		virtual bool dataFromSysex(const std::vector<MidiMessage> &message) override;
 		virtual std::vector<MidiMessage> dataToSysex() const override;
@@ -156,7 +159,7 @@ namespace midikraft {
 
 	class RD8LiveSong : public RD8Song {
 	public:
-		RD8LiveSong(BehringerRD8 &rd8);
+		RD8LiveSong(BehringerRD8 const *rd8);
 
 		virtual bool dataFromSysex(const std::vector<MidiMessage> &message) override;
 		virtual std::vector<MidiMessage> dataToSysex() const override;
@@ -164,7 +167,7 @@ namespace midikraft {
 
 	class RD8GlobalSettings : public RD8DataFile {
 	public:
-		RD8GlobalSettings(BehringerRD8 &rd8);
+		RD8GlobalSettings(BehringerRD8 const *rd8);
 
 		virtual bool dataFromSysex(const std::vector<MidiMessage> &message) override;
 		virtual std::vector<MidiMessage> dataToSysex() const override;
@@ -179,11 +182,7 @@ namespace midikraft {
 	private:
 		struct ValueDefinition {
 			int index;
-			String sectionName;
-			String propertyName;
-			ValueType valueType;
-			int minValue, maxValue;
-			std::map<int, std::string> lookupTable;
+			TypedNamedValue def;
 		};
 
 		static std::vector<ValueDefinition> kGlobalSettingsDefinition;

@@ -5,8 +5,14 @@
 
 namespace midikraft {
 
-	RD8DataFile::RD8DataFile(BehringerRD8 &rd8, uint8 midiFileType) : rd8_(rd8), midiFileType_(midiFileType)
+	RD8DataFile::RD8DataFile(BehringerRD8 const *rd8, uint8 midiFileType) : DataFile(midiFileType), rd8_(rd8), midiFileType_(midiFileType)
 	{
+	}
+
+	std::string RD8DataFile::name() const
+	{
+		//TOOD
+		return "RD8 data";
 	}
 
 	bool RD8DataFile::isDataDump(const MidiMessage & message) const
@@ -62,7 +68,7 @@ namespace midikraft {
 		return result;
 	}
 
-	RD8StoredPattern::RD8StoredPattern(BehringerRD8 &rd8) : RD8Pattern(rd8, RD8_STORED_PATTERN_RESPONSE)
+	RD8StoredPattern::RD8StoredPattern(BehringerRD8 const *rd8) : RD8Pattern(rd8, RD8_STORED_PATTERN_RESPONSE)
 	{
 	}
 
@@ -89,14 +95,14 @@ namespace midikraft {
 
 	std::vector<juce::MidiMessage> RD8StoredPattern::dataToSysex() const
 	{
-		auto message = rd8_.createRequestMessage(BehringerRD8::MessageID({ RD8_DATA_MESSAGE, midiFileType_ }));
+		auto message = rd8_->createRequestMessage(BehringerRD8::MessageID({ RD8_DATA_MESSAGE, midiFileType_ }));
 		message.push_back(songNo);
 		message.push_back(patternNo);
 		message.insert(message.end(), data.begin(), data.end());
 		return std::vector<MidiMessage>({ MidiHelpers::sysexMessage(message) });
 	}
 
-	RD8LivePattern::RD8LivePattern(BehringerRD8 &rd8) : RD8Pattern(rd8, RD8_LIVE_PATTERN_RESPONSE)
+	RD8LivePattern::RD8LivePattern(BehringerRD8 const *rd8) : RD8Pattern(rd8, RD8_LIVE_PATTERN_RESPONSE)
 	{
 	}
 
@@ -118,12 +124,12 @@ namespace midikraft {
 
 	std::vector<juce::MidiMessage> RD8LivePattern::dataToSysex() const
 	{
-		auto message = rd8_.createRequestMessage(BehringerRD8::MessageID({ RD8_DATA_MESSAGE,  midiFileType_ }));
+		auto message = rd8_->createRequestMessage(BehringerRD8::MessageID({ RD8_DATA_MESSAGE,  midiFileType_ }));
 		message.insert(message.end(), data.begin(), data.end());
 		return std::vector<MidiMessage>({ MidiHelpers::sysexMessage(message) });
 	}
 
-	RD8StoredSong::RD8StoredSong(BehringerRD8 &rd8) : RD8Song(rd8, RD8_STORED_SONG_RESPONSE)
+	RD8StoredSong::RD8StoredSong(BehringerRD8 const *rd8) : RD8Song(rd8, RD8_STORED_SONG_RESPONSE)
 	{
 	}
 
@@ -148,13 +154,13 @@ namespace midikraft {
 
 	std::vector<juce::MidiMessage> RD8StoredSong::dataToSysex() const
 	{
-		auto message = rd8_.createRequestMessage(BehringerRD8::MessageID({ RD8_DATA_MESSAGE,  midiFileType_ }));
+		auto message = rd8_->createRequestMessage(BehringerRD8::MessageID({ RD8_DATA_MESSAGE,  midiFileType_ }));
 		message.push_back(songNo);
 		message.insert(message.end(), data.begin(), data.end());
 		return std::vector<MidiMessage>({ MidiHelpers::sysexMessage(message) });
 	}
 
-	RD8LiveSong::RD8LiveSong(BehringerRD8 &rd8) : RD8Song(rd8, RD8_LIVE_PATTERN_RESPONSE)
+	RD8LiveSong::RD8LiveSong(BehringerRD8 const *rd8) : RD8Song(rd8, RD8_LIVE_PATTERN_RESPONSE)
 	{
 	}
 
@@ -174,12 +180,12 @@ namespace midikraft {
 
 	std::vector<juce::MidiMessage> RD8LiveSong::dataToSysex() const
 	{
-		auto message = rd8_.createRequestMessage(BehringerRD8::MessageID({ RD8_DATA_MESSAGE,  midiFileType_ }));
+		auto message = rd8_->createRequestMessage(BehringerRD8::MessageID({ RD8_DATA_MESSAGE,  midiFileType_ }));
 		message.insert(message.end(), data.begin(), data.end());
 		return std::vector<MidiMessage>({ MidiHelpers::sysexMessage(message) });
 	}
 
-	RD8GlobalSettings::RD8GlobalSettings(BehringerRD8 &rd8) : RD8DataFile(rd8, RD8_GLOBAL_SETTINGS_RESPONSE)
+	RD8GlobalSettings::RD8GlobalSettings(BehringerRD8 const *rd8) : RD8DataFile(rd8, RD8_GLOBAL_SETTINGS_RESPONSE)
 	{
 	}
 
@@ -201,7 +207,7 @@ namespace midikraft {
 
 	std::vector<juce::MidiMessage> RD8GlobalSettings::dataToSysex() const
 	{
-		auto message = rd8_.createRequestMessage(BehringerRD8::MessageID({ RD8_DATA_MESSAGE,  midiFileType_ }));
+		auto message = rd8_->createRequestMessage(BehringerRD8::MessageID({ RD8_DATA_MESSAGE,  midiFileType_ }));
 		auto escapedData = escapeSysex(data);
 		message.insert(message.end(), escapedData.begin(), escapedData.end());
 		return std::vector<MidiMessage>({ MidiHelpers::sysexMessage(message) });
@@ -217,20 +223,19 @@ namespace midikraft {
 		}
 
 		// Load the individual data items and create a data structure that will be used by the property panel
-		for (auto def : kGlobalSettingsDefinition) {
-			var dataVariant = data[def.index];
-			TypedNamedValue value({ def.propertyName, def.sectionName, Value(dataVariant), def.valueType, def.minValue, def.maxValue, def.lookupTable });
-			settings.push_back(std::make_shared<TypedNamedValue>(value));
+		for (auto setting : kGlobalSettingsDefinition) {
+			var dataVariant = data[setting.index];
+			settings.push_back(std::make_shared<TypedNamedValue>(setting.def)); // Use copy constructor to create shared object
 		}
 		return settings;
 	}
 
 	bool RD8GlobalSettings::pokeSetting(std::string const &settingName, uint8 newValue)
 	{
-		for (auto def : kGlobalSettingsDefinition) {
-			if (def.propertyName.toStdString() == settingName) {
-				if (newValue >= def.minValue && newValue <= def.maxValue) {
-					data[def.index] = newValue;
+		for (auto setting : kGlobalSettingsDefinition) {
+			if (setting.def.name().toStdString() == settingName) {
+				if (newValue >= setting.def.minValue() && newValue <= setting.def.maxValue()) {
+					data[setting.index] = newValue;
 					return true;
 				}
 			}
@@ -240,9 +245,9 @@ namespace midikraft {
 
 	juce::uint8 RD8GlobalSettings::peekSetting(std::string const &settingName) const
 	{
-		for (auto def : kGlobalSettingsDefinition) {
-			if (def.propertyName.toStdString() == settingName) {
-				return data[def.index];
+		for (auto setting: kGlobalSettingsDefinition) {
+			if (setting.def.name().toStdString() == settingName) {
+				return data[setting.index];
 			}
 		}
 		jassert(false);
@@ -265,27 +270,28 @@ namespace midikraft {
 		{10, "11" }, { 11, "12" }, { 12, "13" }, { 13, "14" }, { 14, "15" }, { 15, "16" }, { 16, "All (omni)" } };
 
 	std::vector<RD8GlobalSettings::ValueDefinition> RD8GlobalSettings::kGlobalSettingsDefinition = {
-		{ 4, "General", "Device ID", ValueType::Integer, 0, 15 },
-		{ 5, "General", "Clock Source", ValueType::Lookup, 0, 3, { {0, "Internal"}, {1, "MIDI" }, { 2, "USB" }, { 3, "Trigger" } } },
-		{ 6, "General", "Analog Clock Mode", ValueType::Lookup, 0, 4, { {0, "1 PPQ"}, {1, "2 PPQ" }, { 2, "4 PPQ" }, { 3, "24 PPQ" }, { 4, "48 PPQ" } }  },
-		{ 7, "MIDI", "MIDI RX Channel", ValueType::Lookup, 0, 16, kMidiChannelLookup }, // MIDIChannel with extra!
-		{ 8, "MIDI", "MIDI TX Channel", ValueType::Lookup, 0, 16, kMidiChannelLookup }, // MIDIChannel with extra!
-		{ 9, "MIDI", "MIDI to USB through", ValueType::Bool, 0, 1 },
-		{ 10, "MIDI", "MIDI soft through", ValueType::Bool, 0, 1 },
-		{ 11, "MIDI", "USB RX Channel", ValueType::Lookup, 0, 16, kMidiChannelLookup }, // MIDIChannel with extra! 16 = All, 17 = equal to Out
-		{ 12, "MIDI", "USB TX Channel", ValueType::Lookup, 0, 16, kMidiChannelLookup }, // MIDIChannel with extra!
-		{ 13, "MIDI", "USB to MIDI through", ValueType::Bool, 0, 1 },
-		{ 14, "Note mapping", "Bass Drum MIDI Note mapping", ValueType::Integer, 0, 128},
-		{ 15, "Note mapping", "Snare Drum MIDI Note mapping", ValueType::Integer, 0, 128},
-		{ 16, "Note mapping", "Low Tom MIDI Note mapping", ValueType::Integer, 0, 128},
-		{ 17, "Note mapping", "Mid Tom MIDI Note mapping", ValueType::Integer, 0, 128},
-		{ 18, "Note mapping", "High Tom MIDI Note mapping", ValueType::Integer, 0, 128},
-		{ 19, "Note mapping", "Rim Shot MIDI Note mapping", ValueType::Integer, 0, 128},
-		{ 20, "Note mapping", "Hand Clap MIDI Note mapping", ValueType::Integer, 0, 128},
-		{ 21, "Note mapping", "Cow Bell MIDI Note mapping", ValueType::Integer, 0, 128},
-		{ 22, "Note mapping", "Cymbal MIDI Note mapping", ValueType::Integer, 0, 128},
-		{ 23, "Note mapping", "Open Hat MIDI Note mapping", ValueType::Integer, 0, 128},
-		{ 24, "Note mapping", "Closed Hat MIDI Note mapping", ValueType::Integer, 0, 128},
+		{ 4, TypedNamedValue("Device ID", "General", 0, 0, 15) },
+		{ 5, TypedNamedValue("Clock Source", "General", 0, { {0, "Internal"}, {1, "MIDI" }, { 2, "USB" }, { 3, "Trigger" } }) },
+		{ 6, TypedNamedValue("Analog Clock Mode", "General", 0, { {0, "1 PPQ"}, {1, "2 PPQ" }, { 2, "4 PPQ" }, { 3, "24 PPQ" }, { 4, "48 PPQ" } })  },
+		{ 7, TypedNamedValue("MIDI RX Channel", "MIDI", 0, kMidiChannelLookup) }, // MIDIChannel with extra!
+		{ 8, TypedNamedValue("MIDI TX Channel", "MIDI", 0, kMidiChannelLookup) }, // MIDIChannel with extra!
+		{ 9, TypedNamedValue("MIDI to USB through", "MIDI", false) },
+		{ 10, TypedNamedValue("MIDI soft through", "MIDI", false) },
+		{ 11, TypedNamedValue("USB RX Channel", "MIDI", 0, kMidiChannelLookup) }, // MIDIChannel with extra! 16 = All, 17 = equal to Out
+		{ 12, TypedNamedValue("USB TX Channel", "MIDI", 0, kMidiChannelLookup) }, // MIDIChannel with extra!
+		{ 13, TypedNamedValue("USB to MIDI through", "MIDI", false) },
+		{ 14, TypedNamedValue("Bass Drum MIDI Note mapping", "Note mapping", 0, 0, 128) },
+		{ 15, TypedNamedValue("Snare Drum MIDI Note mapping", "Note mapping", 0, 0, 128) },
+		{ 16, TypedNamedValue("Low Tom MIDI Note mapping", "Note mapping", 0, 0, 128) },
+		{ 17, TypedNamedValue("Mid Tom MIDI Note mapping", "Note mapping", 0, 0, 128) },
+		{ 18, TypedNamedValue("High Tom MIDI Note mapping", "Note mapping", 0, 0, 128) },
+		{ 19, TypedNamedValue("Rim Shot MIDI Note mapping", "Note mapping", 0, 0, 128) },
+		{ 20, TypedNamedValue("Hand Clap MIDI Note mapping", "Note mapping", 0, 0, 128) },
+		{ 21, TypedNamedValue("Cow Bell MIDI Note mapping", "Note mapping", 0, 0, 128) },
+		{ 22, TypedNamedValue("Cymbal MIDI Note mapping", "Note mapping", 0, 0, 128) },
+		{ 23, TypedNamedValue("Open Hat MIDI Note mapping", "Note mapping", 0, 0, 128) },
+		{ 24, TypedNamedValue("Closed Hat MIDI Note mapping", "Note mapping", 0, 0, 128) },
+	};/*
 		{ 25, "Song mode", "Song Chain Mode", ValueType::Bool, 0, 1},
 		{ 26, "Preferences", "Tempo Preference", ValueType::Lookup, 0, 2, kPreferenceLookup },
 		{ 27, "Preferences", "Swing Preference", ValueType::Lookup,0, 2, kPreferenceLookup },
@@ -316,7 +322,7 @@ namespace midikraft {
 		//{ 47 + 64 + 4 , "Global FX Assignments", 0, 1},
 		//{ 47 + 64 + 5 , "Global Mute Assignments", 0, 1},
 		//{ 47 + 64 + 6 , "Global Solo Assignments", 0, 1},
-	};
+	};*/
 
 	std::shared_ptr<RD8Pattern::PatternData> RD8Pattern::getPattern() const
 	{
