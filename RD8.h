@@ -5,6 +5,8 @@
 #include "StepSequencer.h"
 #include "MasterkeyboardCapability.h"
 #include "SoundExpanderCapability.h"
+#include "GlobalSettingsCapability.h"
+
 #include "MidiController.h"
 
 #include "RD8Pattern.h"
@@ -37,9 +39,18 @@ namespace midikraft {
 		virtual std::vector<MidiMessage> dataToDumpSysex(const T &patch) const = 0;
 	};
 
-	class BehringerRD8 : public Synth, public SimpleDiscoverableDevice, public SoundExpanderCapability, public MasterkeyboardCapability, public DataFileLoadCapability {
+	class BehringerRD8 : public Synth, public SimpleDiscoverableDevice, public SoundExpanderCapability, public MasterkeyboardCapability, 
+		public DataFileLoadCapability /*, public GlobalSettingsCapability */{
 	public:
 		struct MessageID { uint8 messageType, messageID; };
+
+		enum RD8DateFileTypes {
+			STORED_PATTERN,
+			STORED_SONG,
+			LIVE_PATTERN,
+			LIVE_SONG,
+			SETTINGS
+		};
 
 		BehringerRD8();
 

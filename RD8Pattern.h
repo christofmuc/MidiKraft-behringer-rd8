@@ -11,7 +11,7 @@ namespace midikraft {
 
 	class RD8DataFile : public DataFile, public SysexDataSerializationCapability {
 	public:
-		RD8DataFile(BehringerRD8 const *rd8, uint8 midiFileType);
+		RD8DataFile(BehringerRD8 const *rd8, int dataTypeID, uint8 midiFileType);
 
 		virtual std::string name() const override;
 
@@ -113,8 +113,6 @@ namespace midikraft {
 			STEP_BYTE_MASK_NOTE_REPEAT_ON_OFF_BIT = 1 << 4,
 			STEP_BYTE_MASK_NOTE_REPEAT = 3 << 5
 		};
-
-		std::vector<uint8> data; // To be interpreted with the sysex table above
 	};
 
 	class RD8LivePattern : public RD8Pattern {
@@ -141,9 +139,6 @@ namespace midikraft {
 	class RD8Song : public RD8DataFile {
 	public:
 		using RD8DataFile::RD8DataFile;
-
-	protected:
-		std::vector<uint8> data; // We don't know yet what 
 	};
 
 	class RD8StoredSong : public RD8Song {
@@ -186,8 +181,6 @@ namespace midikraft {
 		};
 
 		static std::vector<ValueDefinition> kGlobalSettingsDefinition;
-
-		std::vector<uint8> data; // We don't know yet what 
 	};
 
 }

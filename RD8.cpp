@@ -114,23 +114,23 @@ namespace midikraft {
 	{
 		std::vector<uint8> message;
 		switch (dataTypeID) {
-		case RD8_STORED_PATTERN_REQUEST:
+		case STORED_PATTERN:
 			message = createRequestMessage(MessageID({ RD8_DATA_MESSAGE, RD8_STORED_PATTERN_REQUEST }));
 			message.push_back((uint8)itemNo / 16);
 			message.push_back(itemNo % 16);
 			break;
-		case RD8_LIVE_PATTERN_REQUEST:
+		case LIVE_PATTERN:
 			message = createRequestMessage(MessageID({ RD8_DATA_MESSAGE, RD8_LIVE_PATTERN_REQUEST }));
 			message.push_back((uint8)itemNo / 16);
 			break;
-		case RD8_STORED_SONG_REQUEST:
+		case STORED_SONG:
 			message = createRequestMessage(MessageID({ RD8_DATA_MESSAGE, RD8_STORED_SONG_REQUEST }));
 			message.push_back((uint8)itemNo);
 			break;
-		case RD8_LIVE_SONG_REQUEST:
+		case LIVE_SONG:
 			message = createRequestMessage(MessageID({ RD8_DATA_MESSAGE, RD8_LIVE_SONG_REQUEST }));
 			break;
-		case RD8_GLOBAL_SETTINGS_REQUEST:
+		case SETTINGS:
 			message = createRequestMessage(MessageID({ RD8_DATA_MESSAGE, RD8_GLOBAL_SETTINGS_REQUEST }));
 			break;
 		default:
@@ -143,11 +143,11 @@ namespace midikraft {
 	int BehringerRD8::numberOfDataItemsPerType(int dataTypeID) const
 	{
 		switch (dataTypeID) {
-		case RD8_STORED_PATTERN_REQUEST: return numberOfSongs() * numberOfPatternsPerSong();
-		case RD8_LIVE_PATTERN_REQUEST: return numberOfPatternsPerSong();
-		case RD8_STORED_SONG_REQUEST: return numberOfSongs();
-		case RD8_LIVE_SONG_REQUEST: return 1;
-		case RD8_GLOBAL_SETTINGS_REQUEST: return 1;
+		case STORED_PATTERN: return numberOfSongs() * numberOfPatternsPerSong();
+		case LIVE_PATTERN: return numberOfPatternsPerSong();
+		case STORED_SONG: return numberOfSongs();
+		case LIVE_SONG: return 1;
+		case SETTINGS: return 1;
 		default:
 			jassert(false);
 		}
@@ -157,23 +157,23 @@ namespace midikraft {
 	bool BehringerRD8::isDataFile(const MidiMessage &message, int dataTypeID) const
 	{
 		switch (dataTypeID) {
-		case RD8_STORED_PATTERN_REQUEST: {
+		case STORED_PATTERN: {
 			RD8StoredPattern pattern(this);
 			return pattern.isDataDump(message);
 		}
-		case RD8_LIVE_PATTERN_REQUEST: {
+		case LIVE_PATTERN: {
 			RD8LivePattern pattern(this);
 			return pattern.isDataDump(message);
 		}
-		case RD8_STORED_SONG_REQUEST: {
+		case STORED_SONG: {
 			RD8StoredSong song(this);
 			return song.isDataDump(message);
 		}
-		case RD8_LIVE_SONG_REQUEST: {
+		case LIVE_SONG: {
 			RD8LiveSong song(this);
 			return song.isDataDump(message);
 		}
-		case RD8_GLOBAL_SETTINGS_REQUEST: {
+		case SETTINGS: {
 			RD8GlobalSettings settings(this);
 			return settings.isDataDump(message);
 		}
@@ -383,13 +383,39 @@ namespace midikraft {
 
 	std::shared_ptr<midikraft::DataFile> BehringerRD8::patchFromPatchData(const Synth::PatchData &data, MidiProgramNumber place) const
 	{
-		ignoreUnused(data, place);
-		throw std::logic_error("The method or operation is not implemented.");
+		ignoreUnused(place);
+		MidiMessage sysex = MidiHelpers::sysexMessage(data);
+		if (isDataFile(sysex, STORED_PATTERN)) {
+			auto pattern = std::make_unique<RD8StoredPattern>(this);
+			if (pattern->dataFromSysex({ sysex })) {
+				return pattern;
+			}
+		} 
+		if (isDataFile(sysex, LIVE_PATTERN)) {
+			auto pattern = std::make_unique<RD8LivePattern>(this);
+			if (pattern->dataFromSysex({ sysex })) {
+				return pattern;
+			}
+		}
+		if (isDataFile(sysex, STORED_SONG)) {
+			auto pattern = std::make_unique<RD8StoredSong>(this);
+			if (pattern->dataFromSysex({ sysex })) {
+				return pattern;
+			}
+		}
+		if (isDataFile(sysex, LIVE_SONG)) {
+			auto pattern = std::make_unique<RD8LiveSong>(this);
+			if (pattern->dataFromSysex({ sysex })) {
+				return pattern;
+			}
+		}
+		return nullptr;
 	}
 
 	std::vector<midikraft::DataFileLoadCapability::DataFileDescription> BehringerRD8::dataTypeNames() const
 	{
-		return {};
+		//TODO - this is a smell, the order has to be equal to the type ID. Dangerous!
+		return { { "Stored Pattern", true, true}, { "Stored Song", true, true }, { "Live Pattern", true, true }, { "Live Song", true, true } };
 	}
 
 }

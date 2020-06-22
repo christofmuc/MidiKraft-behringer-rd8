@@ -5,7 +5,7 @@
 
 namespace midikraft {
 
-	RD8DataFile::RD8DataFile(BehringerRD8 const *rd8, uint8 midiFileType) : DataFile(midiFileType), rd8_(rd8), midiFileType_(midiFileType)
+	RD8DataFile::RD8DataFile(BehringerRD8 const *rd8, int dataTypeID, uint8 midiFileType) : DataFile(dataTypeID), rd8_(rd8), midiFileType_(midiFileType)
 	{
 	}
 
@@ -68,7 +68,7 @@ namespace midikraft {
 		return result;
 	}
 
-	RD8StoredPattern::RD8StoredPattern(BehringerRD8 const *rd8) : RD8Pattern(rd8, RD8_STORED_PATTERN_RESPONSE)
+	RD8StoredPattern::RD8StoredPattern(BehringerRD8 const *rd8) : RD8Pattern(rd8, BehringerRD8::STORED_PATTERN, RD8_STORED_PATTERN_RESPONSE)
 	{
 	}
 
@@ -82,10 +82,11 @@ namespace midikraft {
 					songNo = message.getSysExData()[14];
 					patternNo = message.getSysExData()[15];
 					// The rest is binary data we need to decrypt
+					/*std::vector<uint8> data;
 					for (int i = 16; i < message.getSysExDataSize(); i++) {
 						data.push_back(message.getSysExData()[i]);
-					}
-					data = unescapeSysex(data);
+					}*/
+					setDataFromSysex(message);
 					return true;
 				}
 			}
@@ -95,14 +96,14 @@ namespace midikraft {
 
 	std::vector<juce::MidiMessage> RD8StoredPattern::dataToSysex() const
 	{
-		auto message = rd8_->createRequestMessage(BehringerRD8::MessageID({ RD8_DATA_MESSAGE, midiFileType_ }));
+		/*auto message = rd8_->createRequestMessage(BehringerRD8::MessageID({ RD8_DATA_MESSAGE, midiFileType_ }));
 		message.push_back(songNo);
 		message.push_back(patternNo);
-		message.insert(message.end(), data.begin(), data.end());
-		return std::vector<MidiMessage>({ MidiHelpers::sysexMessage(message) });
+		message.insert(message.end(), data().begin(), data().end());*/
+		return std::vector<MidiMessage>({ MidiHelpers::sysexMessage(data()) });
 	}
 
-	RD8LivePattern::RD8LivePattern(BehringerRD8 const *rd8) : RD8Pattern(rd8, RD8_LIVE_PATTERN_RESPONSE)
+	RD8LivePattern::RD8LivePattern(BehringerRD8 const *rd8) : RD8Pattern(rd8, BehringerRD8::LIVE_PATTERN, RD8_LIVE_PATTERN_RESPONSE)
 	{
 	}
 
@@ -112,10 +113,11 @@ namespace midikraft {
 		for (auto message : messages) {
 			if (isDataDump(message)) {
 				// As we don't know the format yet, just copy out all bytes we can get
+				/*std::vector<uint8> data;
 				for (int i = 14; i < message.getSysExDataSize(); i++) {
 					data.push_back(message.getSysExData()[i]);
-				}
-				data = unescapeSysex(data);
+				}*/
+				setDataFromSysex(message);
 				return true;
 			}
 		}
@@ -124,12 +126,12 @@ namespace midikraft {
 
 	std::vector<juce::MidiMessage> RD8LivePattern::dataToSysex() const
 	{
-		auto message = rd8_->createRequestMessage(BehringerRD8::MessageID({ RD8_DATA_MESSAGE,  midiFileType_ }));
-		message.insert(message.end(), data.begin(), data.end());
-		return std::vector<MidiMessage>({ MidiHelpers::sysexMessage(message) });
+		/*auto message = rd8_->createRequestMessage(BehringerRD8::MessageID({ RD8_DATA_MESSAGE,  midiFileType_ }));
+		message.insert(message.end(), data().begin(), data().end());*/
+		return { MidiHelpers::sysexMessage(data()) };
 	}
 
-	RD8StoredSong::RD8StoredSong(BehringerRD8 const *rd8) : RD8Song(rd8, RD8_STORED_SONG_RESPONSE)
+	RD8StoredSong::RD8StoredSong(BehringerRD8 const *rd8) : RD8Song(rd8, BehringerRD8::STORED_SONG, RD8_STORED_SONG_RESPONSE)
 	{
 	}
 
@@ -142,9 +144,11 @@ namespace midikraft {
 				if (message.getSysExDataSize() > 14) {
 					songNo = message.getSysExData()[14];
 					// The rest is binary data we need to decrypt
+					/*std::vector<uint8> data;
 					for (int i = 15; i < message.getSysExDataSize(); i++) {
 						data.push_back(message.getSysExData()[i]);
-					}
+					}*/
+					setDataFromSysex(message);
 					return true;
 				}
 			}
@@ -154,13 +158,13 @@ namespace midikraft {
 
 	std::vector<juce::MidiMessage> RD8StoredSong::dataToSysex() const
 	{
-		auto message = rd8_->createRequestMessage(BehringerRD8::MessageID({ RD8_DATA_MESSAGE,  midiFileType_ }));
+		/*auto message = rd8_->createRequestMessage(BehringerRD8::MessageID({ RD8_DATA_MESSAGE,  midiFileType_ }));
 		message.push_back(songNo);
-		message.insert(message.end(), data.begin(), data.end());
-		return std::vector<MidiMessage>({ MidiHelpers::sysexMessage(message) });
+		message.insert(message.end(), data().begin(), data().end());*/
+		return { MidiHelpers::sysexMessage(data()) };
 	}
 
-	RD8LiveSong::RD8LiveSong(BehringerRD8 const *rd8) : RD8Song(rd8, RD8_LIVE_PATTERN_RESPONSE)
+	RD8LiveSong::RD8LiveSong(BehringerRD8 const *rd8) : RD8Song(rd8, BehringerRD8::LIVE_PATTERN, RD8_LIVE_PATTERN_RESPONSE)
 	{
 	}
 
@@ -170,9 +174,11 @@ namespace midikraft {
 		for (auto message : messages) {
 			if (isDataDump(message)) {
 				// As we don't know the format yet, just copy out all bytes we can get
+				/*std::vector<uint8> data; 
 				for (int i = 14; i < message.getSysExDataSize(); i++) {
 					data.push_back(message.getSysExData()[i]);
-				}
+				}*/
+				setDataFromSysex(message);
 			}
 		}
 		return false;
@@ -180,12 +186,12 @@ namespace midikraft {
 
 	std::vector<juce::MidiMessage> RD8LiveSong::dataToSysex() const
 	{
-		auto message = rd8_->createRequestMessage(BehringerRD8::MessageID({ RD8_DATA_MESSAGE,  midiFileType_ }));
-		message.insert(message.end(), data.begin(), data.end());
-		return std::vector<MidiMessage>({ MidiHelpers::sysexMessage(message) });
+		/*auto message = rd8_->createRequestMessage(BehringerRD8::MessageID({ RD8_DATA_MESSAGE,  midiFileType_ }));
+		message.insert(message.end(), data().begin(), data().end());*/
+		return { MidiHelpers::sysexMessage(data()) };
 	}
 
-	RD8GlobalSettings::RD8GlobalSettings(BehringerRD8 const *rd8) : RD8DataFile(rd8, RD8_GLOBAL_SETTINGS_RESPONSE)
+	RD8GlobalSettings::RD8GlobalSettings(BehringerRD8 const *rd8) : RD8DataFile(rd8, BehringerRD8::SETTINGS, RD8_GLOBAL_SETTINGS_RESPONSE)
 	{
 	}
 
@@ -195,10 +201,11 @@ namespace midikraft {
 		for (auto message : messages) {
 			if (isDataDump(message)) {
 				// As we don't know the format yet, just copy out all bytes we can get
+				std::vector<uint8> data;
 				for (int i = 14; i < message.getSysExDataSize(); i++) {
 					data.push_back(message.getSysExData()[i]);
 				}
-				data = unescapeSysex(data);
+				setData(unescapeSysex(data));
 				return true;
 			}
 		}
@@ -208,7 +215,7 @@ namespace midikraft {
 	std::vector<juce::MidiMessage> RD8GlobalSettings::dataToSysex() const
 	{
 		auto message = rd8_->createRequestMessage(BehringerRD8::MessageID({ RD8_DATA_MESSAGE,  midiFileType_ }));
-		auto escapedData = escapeSysex(data);
+		auto escapedData = escapeSysex(data());
 		message.insert(message.end(), escapedData.begin(), escapedData.end());
 		return std::vector<MidiMessage>({ MidiHelpers::sysexMessage(message) });
 	}
@@ -217,14 +224,14 @@ namespace midikraft {
 	{
 		std::vector<std::shared_ptr<TypedNamedValue>> settings;
 
-		if (data[0] != 0 || data[1] != 0x08) {
+		if (data()[0] != 0 || data()[1] != 0x08) {
 			jassert(false);
 			return settings;
 		}
 
 		// Load the individual data items and create a data structure that will be used by the property panel
 		for (auto setting : kGlobalSettingsDefinition) {
-			var dataVariant = data[setting.index];
+			var dataVariant = at(setting.index);
 			settings.push_back(std::make_shared<TypedNamedValue>(setting.def)); // Use copy constructor to create shared object
 		}
 		return settings;
@@ -235,7 +242,7 @@ namespace midikraft {
 		for (auto setting : kGlobalSettingsDefinition) {
 			if (setting.def.name().toStdString() == settingName) {
 				if (newValue >= setting.def.minValue() && newValue <= setting.def.maxValue()) {
-					data[setting.index] = newValue;
+					setAt(setting.index, newValue);
 					return true;
 				}
 			}
@@ -247,7 +254,7 @@ namespace midikraft {
 	{
 		for (auto setting: kGlobalSettingsDefinition) {
 			if (setting.def.name().toStdString() == settingName) {
-				return data[setting.index];
+				return (uint8) at(setting.index);
 			}
 		}
 		jassert(false);
@@ -330,7 +337,7 @@ namespace midikraft {
 		RD8Pattern::PatternData &out = *result;
 
 		// Check that the data version and the product version are ok!
-		if (!(data[PatternDataVersion] == 0 && data[ProductVariant] == 0x08) || data.size() != 889) {
+		if (!(at(PatternDataVersion) == 0 && at(ProductVariant) == 0x08) || data().size() != 889) {
 			jassert(false);
 			return std::shared_ptr<RD8Pattern::PatternData>();
 		}
@@ -340,7 +347,7 @@ namespace midikraft {
 		for (int track = 0; track < 12; track++) {
 			out.tracks.push_back(std::vector<std::shared_ptr<StepData>>());
 			for (int step = 0; step < 64; step++) {
-				uint8 toDecode = data[AccentSteps + track * 64 + step];
+				uint8 toDecode = (uint8) at(AccentSteps + track * 64 + step);
 				std::shared_ptr<RD8Pattern::StepData> stepData = std::make_shared<RD8Pattern::StepData>();
 				stepData->stepOnOff = (toDecode & STEP_BYTE_MASK_ON_OFF_BIT) != 0;
 				stepData->probabilityOnOff = (toDecode & STEP_BYTE_MASK_PROBABILITY_BIT) != 0;
@@ -352,22 +359,22 @@ namespace midikraft {
 		}
 
 		// Interpret pattern parameters
-		out.tempo = data[Tempo];
-		out.swing = data[Swing];
-		out.probability = data[Probability];
-		out.flamLevel = data[FlamLevel];
-		out.filterMode = data[FilterMode];
-		jassert(data[FilterEnable] == 0 || data[FilterEnable] == 1); // Assuming this is a bool
-		out.filterOnOff = data[FilterEnable];
-		jassert(data[FilterAutomation] == 0 || data[FilterAutomation] == 1); // Assuming this is a bool
-		out.filterAutomationOnOff = data[FilterAutomation] != 0;
+		out.tempo = (uint8) at(Tempo);
+		out.swing = (uint8) at(Swing);
+		out.probability = (uint8) at(Probability);
+		out.flamLevel = (uint8) at(FlamLevel);
+		out.filterMode = (uint8) at(FilterMode);
+		jassert(at(FilterEnable) == 0 || at(FilterEnable) == 1); // Assuming this is a bool
+		out.filterOnOff = at(FilterEnable);
+		jassert(at(FilterAutomation) == 0 || at(FilterAutomation) == 1); // Assuming this is a bool
+		out.filterAutomationOnOff = at(FilterAutomation) != 0;
 		out.filterSteps.clear();
-		for (int i = 0; i < 64; i++) out.filterSteps.push_back(data[FilterSteps + i]);
-		jassert(data[PolymeterOnOff] == 0 || data[PolymeterOnOff] == 1); // Assuming this is a bool
-		out.polymeterOnOff = data[PolymeterOnOff] != 0;
-		out.stepSize = data[StepSize];
-		jassert(data[AutoAdvance] == 0 || data[AutoAdvance] == 1); // Assuming this is a bool
-		out.autoAdvanceOnOff = data[AutoAdvance] != 0;
+		for (int i = 0; i < 64; i++) out.filterSteps.push_back((uint8)at(FilterSteps + i));
+		jassert(at(PolymeterOnOff) == 0 || at(PolymeterOnOff) == 1); // Assuming this is a bool
+		out.polymeterOnOff = at(PolymeterOnOff) != 0;
+		out.stepSize = (uint8)at(StepSize);
+		jassert(at(AutoAdvance) == 0 || at(AutoAdvance) == 1); // Assuming this is a bool
+		out.autoAdvanceOnOff = at(AutoAdvance) != 0;
 		return result;
 	}
 
