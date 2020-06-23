@@ -176,7 +176,7 @@ namespace midikraft {
 		virtual std::vector<MidiMessage> dataToSysex() const override;
 
 		// high level access
-		std::vector<std::shared_ptr<TypedNamedValue>> globalSettings() const;
+		TypedNamedValueSet globalSettings() const;
 
 		// low level access
 		bool pokeSetting(std::string const &settingName, uint8 newValue);
@@ -188,6 +188,7 @@ namespace midikraft {
 			TypedNamedValue def;
 		};
 
+		TypedNamedValueSet globalSettings_;
 		static std::vector<ValueDefinition> kGlobalSettingsDefinition;
 	};
 

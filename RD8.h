@@ -40,7 +40,9 @@ namespace midikraft {
 	};
 
 	class BehringerRD8 : public Synth, public SimpleDiscoverableDevice, public SoundExpanderCapability, public MasterkeyboardCapability, 
-		public DataFileLoadCapability, public GlobalSettingsCapability {
+		public DataFileLoadCapability, public GlobalSettingsCapability,
+		private ValueTree::Listener
+	{
 	public:
 		struct MessageID { uint8 messageType, messageID; };
 
@@ -113,6 +115,7 @@ namespace midikraft {
 
 	private:
 		void globalSettingsOperation(MidiController *controller, std::function<void(std::shared_ptr<RD8GlobalSettings> settingsData)> operation);
+		void valueTreePropertyChanged(ValueTree& treeWhosePropertyHasChanged, const Identifier& property) override;
 		void getMidiChannelsFromDevice();
 
 		struct FirmwareVersion { uint8 major, minor, patch; };
@@ -126,6 +129,7 @@ namespace midikraft {
 		MidiController::HandlerHandle roundtripHandle_ = MidiController::makeNoneHandle();
 
 		std::shared_ptr<RD8GlobalSettings> globalSettings_;
+		ValueTree globalSettingsTree_;
 	};
 
 }

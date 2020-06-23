@@ -83,6 +83,10 @@ namespace midikraft {
 			auto settings = std::dynamic_pointer_cast<RD8GlobalSettings>(dataFile);
 			if (settings) {
 				globalSettings_ = settings;
+				// Put all of the values into a ValueTree that we will observe
+				globalSettingsTree_ = ValueTree("RD8SETTINGS");
+				globalSettings_->globalSettings().addToValueTree(globalSettingsTree_);
+				globalSettingsTree_.addListener(this);
 			}
 			else {
 				jassertfalse;
@@ -103,6 +107,19 @@ namespace midikraft {
 	int BehringerRD8::settingsDataFileType() const
 	{
 		return SETTINGS;
+	}
+
+	void BehringerRD8::valueTreePropertyChanged(ValueTree& treeWhosePropertyHasChanged, const Identifier& property)
+	{
+		// Poke the value into the data
+		globalSettings_->pokeSetting(String(property.getCharPointer()).toStdString(), (uint8)(int)treeWhosePropertyHasChanged.getProperty(property));
+
+		// Construct MIDI message for this update
+		auto update = globalSettings_->dataToSysex();
+		if (update.size() == 1) {
+			// Then debounced send the new settings to the RD8
+			MidiController::instance()->getMidiOutput(midiOutput())->sendMessageDebounced(update[0], 200);
+		}
 	}
 
 	std::vector<uint8> BehringerRD8::createSysexMessage(uint8 deviceID, uint8 messageType, uint8 messageID) const {

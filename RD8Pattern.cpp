@@ -222,11 +222,20 @@ namespace midikraft {
 		for (auto message : messages) {
 			if (isDataDump(message)) {
 				// As we don't know the format yet, just copy out all bytes we can get
-				std::vector<uint8> data;
+				std::vector<uint8> rawData;
 				for (int i = 14; i < message.getSysExDataSize(); i++) {
-					data.push_back(message.getSysExData()[i]);
+					rawData.push_back(message.getSysExData()[i]);
 				}
-				setData(unescapeSysex(data));
+				setData(unescapeSysex(rawData));
+				globalSettings_.clear();
+				// Load the individual data items and create a data structure that will be used by the property panel
+				for (auto setting : kGlobalSettingsDefinition) {
+					globalSettings_.push_back(std::make_shared<TypedNamedValue>(setting.def)); // Use copy constructor to create shared object
+					if (setting.index < data().size()) {
+						var dataVariant = at(setting.index);
+						globalSettings_.back()->value() = dataVariant;
+					}
+				}
 				return true;
 			}
 		}
@@ -241,19 +250,9 @@ namespace midikraft {
 		return std::vector<MidiMessage>({ MidiHelpers::sysexMessage(message) });
 	}
 
-	std::vector<std::shared_ptr<TypedNamedValue>> RD8GlobalSettings::globalSettings() const
+	TypedNamedValueSet RD8GlobalSettings::globalSettings() const
 	{
-		std::vector<std::shared_ptr<TypedNamedValue>> settings;
-
-		// Load the individual data items and create a data structure that will be used by the property panel
-		for (auto setting : kGlobalSettingsDefinition) {
-			settings.push_back(std::make_shared<TypedNamedValue>(setting.def)); // Use copy constructor to create shared object
-			if (setting.index < data().size()) {
-				var dataVariant = at(setting.index);
-				settings.back()->value() = dataVariant;
-			}
-		}
-		return settings;
+		return globalSettings_;
 	}
 
 	bool RD8GlobalSettings::pokeSetting(std::string const &settingName, uint8 newValue)
