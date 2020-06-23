@@ -40,7 +40,7 @@ namespace midikraft {
 	};
 
 	class BehringerRD8 : public Synth, public SimpleDiscoverableDevice, public SoundExpanderCapability, public MasterkeyboardCapability, 
-		public DataFileLoadCapability /*, public GlobalSettingsCapability */{
+		public DataFileLoadCapability, public GlobalSettingsCapability {
 	public:
 		struct MessageID { uint8 messageType, messageID; };
 
@@ -105,6 +105,12 @@ namespace midikraft {
 		int numberOfPatches() const override;
 		std::string friendlyBankName(MidiBankNumber bankNo) const override;
 
+		// GlobalSettingsCapability
+		void setGlobalSettingsFromDataFile(std::shared_ptr<DataFile> dataFile) override;
+		std::vector<std::shared_ptr<TypedNamedValue>> getGlobalSettings() override;
+		DataFileLoadCapability * loader() override;
+		int settingsDataFileType() const override;
+
 	private:
 		void globalSettingsOperation(MidiController *controller, std::function<void(std::shared_ptr<RD8GlobalSettings> settingsData)> operation);
 		void getMidiChannelsFromDevice();
@@ -118,6 +124,8 @@ namespace midikraft {
 		MidiChannel outputChannel_ = MidiChannel::invalidChannel();
 
 		MidiController::HandlerHandle roundtripHandle_ = MidiController::makeNoneHandle();
+
+		std::shared_ptr<RD8GlobalSettings> globalSettings_;
 	};
 
 }

@@ -8,6 +8,7 @@ namespace midikraft {
 
 	BehringerRD8::BehringerRD8()
 	{
+		globalSettings_ = std::make_shared<RD8GlobalSettings>(this);
 	}
 
 	std::vector<juce::MidiMessage> BehringerRD8::deviceDetect(int channel)
@@ -75,6 +76,34 @@ namespace midikraft {
 	{
 		ignoreUnused(bankNo);
 		return "Bank";
+	}
+
+	void BehringerRD8::setGlobalSettingsFromDataFile(std::shared_ptr<DataFile> dataFile)
+	{
+		if (dataFile->dataTypeID() == SETTINGS) {
+			auto settings = std::dynamic_pointer_cast<RD8GlobalSettings>(dataFile);
+			if (settings) {
+				globalSettings_ = settings;
+			}
+			else {
+				jassertfalse;
+			}
+		}
+	}
+
+	std::vector<std::shared_ptr<TypedNamedValue>> BehringerRD8::getGlobalSettings()
+	{
+		return globalSettings_->globalSettings();
+	}
+
+	midikraft::DataFileLoadCapability * BehringerRD8::loader()
+	{
+		return this;
+	}
+
+	int BehringerRD8::settingsDataFileType() const
+	{
+		return SETTINGS;
 	}
 
 	std::vector<uint8> BehringerRD8::createSysexMessage(uint8 deviceID, uint8 messageType, uint8 messageID) const {
@@ -282,7 +311,7 @@ namespace midikraft {
 		MidiController::instance()->enableMidiInput(midiInput());
 		MidiController::instance()->addMessageHandler(roundtripHandle_, [this, operation](MidiInput *source, const MidiMessage &message) {
 			ignoreUnused(source);
-			if (isDataFile(message, RD8_GLOBAL_SETTINGS_REQUEST)) {
+			if (isDataFile(message, SETTINGS)) {
 				auto settingsData = std::make_shared<RD8GlobalSettings>(this);
 				if (settingsData->dataFromSysex({ message })) {
 					operation(settingsData);
@@ -291,7 +320,7 @@ namespace midikraft {
 				roundtripHandle_ = MidiController::makeNoneHandle();
 			}
 		});
-		auto buffer = MidiHelpers::bufferFromMessages(requestDataItem(0, RD8_GLOBAL_SETTINGS_REQUEST));
+		auto buffer = MidiHelpers::bufferFromMessages(requestDataItem(0, SETTINGS));
 		MidiController::instance()->getMidiOutput(midiOutput())->sendBlockOfMessagesNow(buffer);
 	}
 

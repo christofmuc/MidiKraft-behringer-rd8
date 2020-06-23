@@ -245,15 +245,13 @@ namespace midikraft {
 	{
 		std::vector<std::shared_ptr<TypedNamedValue>> settings;
 
-		if (data()[0] != 0 || data()[1] != 0x08) {
-			jassert(false);
-			return settings;
-		}
-
 		// Load the individual data items and create a data structure that will be used by the property panel
 		for (auto setting : kGlobalSettingsDefinition) {
-			var dataVariant = at(setting.index);
 			settings.push_back(std::make_shared<TypedNamedValue>(setting.def)); // Use copy constructor to create shared object
+			if (setting.index < data().size()) {
+				var dataVariant = at(setting.index);
+				settings.back()->value() = dataVariant;
+			}
 		}
 		return settings;
 	}
