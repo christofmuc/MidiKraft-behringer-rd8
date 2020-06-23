@@ -13,9 +13,8 @@ namespace midikraft {
 
 	std::vector<juce::MidiMessage> BehringerRD8::deviceDetect(int channel)
 	{
-		ignoreUnused(channel);
-		// How does the detection of other device IDs work, if there are multiple RD8s?
-		return { MidiHelpers::sysexMessage(createSysexMessage(0, RD8_FIRMWARE_MESSAGE, RD8_REQUEST)) };
+		// The channel is really the device ID, but as it is easy to change with my software, don't rely on the fact that it could be 0!
+		return { MidiHelpers::sysexMessage(createSysexMessage((uint8) channel, RD8_FIRMWARE_MESSAGE, RD8_REQUEST)) };
 	}
 
 	int BehringerRD8::deviceDetectSleepMS()
@@ -42,7 +41,7 @@ namespace midikraft {
 
 	bool BehringerRD8::needsChannelSpecificDetection()
 	{
-		return false;
+		return true;
 	}
 
 	std::string BehringerRD8::getName() const
