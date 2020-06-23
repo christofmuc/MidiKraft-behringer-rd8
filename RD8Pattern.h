@@ -11,9 +11,7 @@ namespace midikraft {
 
 	class RD8DataFile : public DataFile, public SysexDataSerializationCapability {
 	public:
-		RD8DataFile(BehringerRD8 const *rd8, int dataTypeID, uint8 midiFileType);
-
-		virtual std::string name() const override;
+		RD8DataFile(BehringerRD8 const *rd8, int dataTypeID, uint8 midiFileType);		
 
 		bool isDataDump(const MidiMessage & message) const;
 
@@ -62,7 +60,7 @@ namespace midikraft {
 			uint8 stepSize;
 			bool autoAdvanceOnOff;
 		};
-
+		
 		std::shared_ptr<RD8Pattern::PatternData> getPattern() const;
 
 	protected:
@@ -119,6 +117,8 @@ namespace midikraft {
 	public:
 		RD8LivePattern(BehringerRD8 const *rd8);
 
+		virtual std::string name() const override;
+
 		virtual bool dataFromSysex(const std::vector<MidiMessage> &message) override;
 		virtual std::vector<MidiMessage> dataToSysex() const override;
 	};
@@ -126,6 +126,8 @@ namespace midikraft {
 	class RD8StoredPattern : public RD8Pattern {
 	public:
 		RD8StoredPattern(BehringerRD8 const *rd8);
+
+		virtual std::string name() const override;
 
 		virtual bool dataFromSysex(const std::vector<MidiMessage> &message) override;
 		virtual std::vector<MidiMessage> dataToSysex() const override;
@@ -145,6 +147,8 @@ namespace midikraft {
 	public:
 		RD8StoredSong(BehringerRD8 const *rd8);
 
+		virtual std::string name() const override;
+
 		virtual bool dataFromSysex(const std::vector<MidiMessage> &message) override;
 		virtual std::vector<MidiMessage> dataToSysex() const override;
 
@@ -156,6 +160,8 @@ namespace midikraft {
 	public:
 		RD8LiveSong(BehringerRD8 const *rd8);
 
+		virtual std::string name() const override;
+
 		virtual bool dataFromSysex(const std::vector<MidiMessage> &message) override;
 		virtual std::vector<MidiMessage> dataToSysex() const override;
 	};
@@ -163,6 +169,8 @@ namespace midikraft {
 	class RD8GlobalSettings : public RD8DataFile {
 	public:
 		RD8GlobalSettings(BehringerRD8 const *rd8);
+
+		virtual std::string name() const override;
 
 		virtual bool dataFromSysex(const std::vector<MidiMessage> &message) override;
 		virtual std::vector<MidiMessage> dataToSysex() const override;

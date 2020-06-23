@@ -31,8 +31,8 @@ set(Sources
 
 # Setup library
 add_library(midikraft-behringer-rd8 ${Sources})
-target_include_directories(midikraft-behringer-rd8 PUBLIC ${CMAKE_CURRENT_LIST_DIR} PRIVATE ${JUCE_INCLUDES})
-target_link_libraries(midikraft-behringer-rd8 juce-utils midikraft-base)
+target_include_directories(midikraft-behringer-rd8 PUBLIC ${CMAKE_CURRENT_LIST_DIR} ${boost_SOURCE_DIR} PRIVATE ${JUCE_INCLUDES})
+target_link_libraries(midikraft-behringer-rd8 juce-utils midikraft-base ${APPLE_BOOST})
 
 # Pedantic about warnings
 if (MSVC)

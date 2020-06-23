@@ -3,16 +3,12 @@
 #include "MidiHelpers.h"
 #include "RD8.h"
 
+#include <boost/format.hpp>
+
 namespace midikraft {
 
 	RD8DataFile::RD8DataFile(BehringerRD8 const *rd8, int dataTypeID, uint8 midiFileType) : DataFile(dataTypeID), rd8_(rd8), midiFileType_(midiFileType)
 	{
-	}
-
-	std::string RD8DataFile::name() const
-	{
-		//TOOD
-		return "RD8 data";
 	}
 
 	bool RD8DataFile::isDataDump(const MidiMessage & message) const
@@ -72,6 +68,11 @@ namespace midikraft {
 	{
 	}
 
+	std::string RD8StoredPattern::name() const
+	{
+		return (boost::format("Pattern %02d/%03d") % (int) songNo % (int)patternNo).str();
+	}
+
 	bool RD8StoredPattern::dataFromSysex(const std::vector<MidiMessage> &messages)
 	{
 		// At least one of the messages is a data dump, we use the first one to find
@@ -107,6 +108,11 @@ namespace midikraft {
 	{
 	}
 
+	std::string RD8LivePattern::name() const
+	{
+		return "Live Pattern";
+	}
+
 	bool RD8LivePattern::dataFromSysex(const std::vector<MidiMessage> &messages)
 	{
 		// At least one of the messages is a data dump, we use the first one to find
@@ -133,6 +139,11 @@ namespace midikraft {
 
 	RD8StoredSong::RD8StoredSong(BehringerRD8 const *rd8) : RD8Song(rd8, BehringerRD8::STORED_SONG, RD8_STORED_SONG_RESPONSE)
 	{
+	}
+
+	std::string RD8StoredSong::name() const
+	{
+		return (boost::format("Stored Song %02d") % (int) songNo ).str();
 	}
 
 	bool RD8StoredSong::dataFromSysex(const std::vector<MidiMessage> &messages)
@@ -168,6 +179,11 @@ namespace midikraft {
 	{
 	}
 
+	std::string RD8LiveSong::name() const
+	{
+		return "Live Song";
+	}
+
 	bool RD8LiveSong::dataFromSysex(const std::vector<MidiMessage> &messages)
 	{
 		// At least one of the messages is a data dump, we use the first one to find
@@ -193,6 +209,11 @@ namespace midikraft {
 
 	RD8GlobalSettings::RD8GlobalSettings(BehringerRD8 const *rd8) : RD8DataFile(rd8, BehringerRD8::SETTINGS, RD8_GLOBAL_SETTINGS_RESPONSE)
 	{
+	}
+
+	std::string RD8GlobalSettings::name() const
+	{
+		return "Settings";
 	}
 
 	bool RD8GlobalSettings::dataFromSysex(const std::vector<MidiMessage> &messages)
@@ -277,59 +298,59 @@ namespace midikraft {
 		{10, "11" }, { 11, "12" }, { 12, "13" }, { 13, "14" }, { 14, "15" }, { 15, "16" }, { 16, "All (omni)" } };
 
 	std::vector<RD8GlobalSettings::ValueDefinition> RD8GlobalSettings::kGlobalSettingsDefinition = {
-		{ 4, TypedNamedValue("Device ID", "General", 0, 0, 15) },
-		{ 5, TypedNamedValue("Clock Source", "General", 0, { {0, "Internal"}, {1, "MIDI" }, { 2, "USB" }, { 3, "Trigger" } }) },
-		{ 6, TypedNamedValue("Analog Clock Mode", "General", 0, { {0, "1 PPQ"}, {1, "2 PPQ" }, { 2, "4 PPQ" }, { 3, "24 PPQ" }, { 4, "48 PPQ" } })  },
-		{ 7, TypedNamedValue("MIDI RX Channel", "MIDI", 0, kMidiChannelLookup) }, // MIDIChannel with extra!
-		{ 8, TypedNamedValue("MIDI TX Channel", "MIDI", 0, kMidiChannelLookup) }, // MIDIChannel with extra!
-		{ 9, TypedNamedValue("MIDI to USB through", "MIDI", false) },
-		{ 10, TypedNamedValue("MIDI soft through", "MIDI", false) },
-		{ 11, TypedNamedValue("USB RX Channel", "MIDI", 0, kMidiChannelLookup) }, // MIDIChannel with extra! 16 = All, 17 = equal to Out
-		{ 12, TypedNamedValue("USB TX Channel", "MIDI", 0, kMidiChannelLookup) }, // MIDIChannel with extra!
-		{ 13, TypedNamedValue("USB to MIDI through", "MIDI", false) },
-		{ 14, TypedNamedValue("Bass Drum MIDI Note mapping", "Note mapping", 0, 0, 128) },
-		{ 15, TypedNamedValue("Snare Drum MIDI Note mapping", "Note mapping", 0, 0, 128) },
-		{ 16, TypedNamedValue("Low Tom MIDI Note mapping", "Note mapping", 0, 0, 128) },
-		{ 17, TypedNamedValue("Mid Tom MIDI Note mapping", "Note mapping", 0, 0, 128) },
-		{ 18, TypedNamedValue("High Tom MIDI Note mapping", "Note mapping", 0, 0, 128) },
-		{ 19, TypedNamedValue("Rim Shot MIDI Note mapping", "Note mapping", 0, 0, 128) },
-		{ 20, TypedNamedValue("Hand Clap MIDI Note mapping", "Note mapping", 0, 0, 128) },
-		{ 21, TypedNamedValue("Cow Bell MIDI Note mapping", "Note mapping", 0, 0, 128) },
-		{ 22, TypedNamedValue("Cymbal MIDI Note mapping", "Note mapping", 0, 0, 128) },
-		{ 23, TypedNamedValue("Open Hat MIDI Note mapping", "Note mapping", 0, 0, 128) },
-		{ 24, TypedNamedValue("Closed Hat MIDI Note mapping", "Note mapping", 0, 0, 128) },
-	};/*
-		{ 25, "Song mode", "Song Chain Mode", ValueType::Bool, 0, 1},
-		{ 26, "Preferences", "Tempo Preference", ValueType::Lookup, 0, 2, kPreferenceLookup },
-		{ 27, "Preferences", "Swing Preference", ValueType::Lookup,0, 2, kPreferenceLookup },
-		{ 28, "Preferences", "Probability Preference", ValueType::Lookup,0, 2, kPreferenceLookup },
-		{ 29, "Preferences", "Flam Preference", ValueType::Lookup,0, 2, kPreferenceLookup},
-		{ 30, "Preferences", "Filter Mode Preference", ValueType::Lookup,0, 2, kPreferenceLookup},
-		{ 31, "Preferences", "Filter Enable Preference", ValueType::Lookup,0, 2, kPreferenceLookup},
-		{ 32, "Preferences", "Filter Automation Preference", ValueType::Lookup,0, 2, kPreferenceLookup},
-		{ 33, "Preferences", "Polymeter Preference", ValueType::Lookup,0, 2, kPreferenceLookup},
-		{ 34, "Preferences", "Step Size Preference", ValueType::Lookup,0, 2, kPreferenceLookup},
-		{ 35, "Preferences", "Auto Advance Preference", ValueType::Lookup,0, 1, {{0, "Song"}, {1, "Global" }} },
-		{ 36, "Preferences", "Auto Scroll Preference", ValueType::Lookup,1, 2, { {1, "Global" }, { 2, "Pattern" }} },
-		{ 37, "Preferences", "FX Bus Preference", ValueType::Lookup,0, 2, kPreferenceLookup},
-		{ 38, "Preferences", "Mute Preference", ValueType::Lookup,0, 2, kPreferenceLookup},
-		{ 39, "Preferences", "Solo Preference", ValueType::Lookup,0, 2, kPreferenceLookup},
-		{ 40, "Global Settings", "Global Tempo", ValueType::Integer, 20, 240},
-		{ 41, "Global Settings", "Global Swing", ValueType::Integer, 50, 75},
-		{ 42, "Global Settings", "Global Probability", ValueType::Integer, 0, 100},
-		{ 43, "Global Settings", "Global Flam", ValueType::Integer, 0, 24},
-		{ 44, "Global Settings", "Global Filter Mode", ValueType::Bool, 0, 1},
-		{ 45, "Global Settings", "Global Filter Enable", ValueType::Bool, 0, 1},
-		{ 46, "Global Settings", "Global Filter Automation", ValueType::Bool, 0, 1},
-		{ 47, "Global Settings", "Global Filter Steps", ValueType::Integer, 0, 255}, // This is an interesting editor... needs an array var
-		{ 47 + 64 , "Global Settings", "Global Polymeter", ValueType::Bool, 0, 1},
-		{ 47 + 64 + 1 , "Global Settings", "Global Step Size", ValueType::Bool, 0, 1},
-		{ 47 + 64 + 2 , "Global Settings", "Global Auto-Advance", ValueType::Bool, 0, 1},
-		{ 47 + 64 + 3 , "Global Settings", "Global Auto-Scroll", ValueType::Bool, 0, 1},
-		//{ 47 + 64 + 4 , "Global FX Assignments", 0, 1},
-		//{ 47 + 64 + 5 , "Global Mute Assignments", 0, 1},
-		//{ 47 + 64 + 6 , "Global Solo Assignments", 0, 1},
-	};*/
+				{ 4, TypedNamedValue("Device ID", "General", 0, 0, 15) },
+				{ 5, TypedNamedValue("Clock Source", "General", 0, { {0, "Internal"}, {1, "MIDI" }, { 2, "USB" }, { 3, "Trigger" } }) },
+				{ 6, TypedNamedValue("Analog Clock Mode", "General", 0, { {0, "1 PPQ"}, {1, "2 PPQ" }, { 2, "4 PPQ" }, { 3, "24 PPQ" }, { 4, "48 PPQ" } })  },
+				{ 7, TypedNamedValue("MIDI RX Channel", "MIDI", 0, kMidiChannelLookup) }, // MIDIChannel with extra!
+				{ 8, TypedNamedValue("MIDI TX Channel", "MIDI", 0, kMidiChannelLookup) }, // MIDIChannel with extra!
+				{ 9, TypedNamedValue("MIDI to USB through", "MIDI", false) },
+				{ 10, TypedNamedValue("MIDI soft through", "MIDI", false) },
+				{ 11, TypedNamedValue("USB RX Channel", "MIDI", 0, kMidiChannelLookup) }, // MIDIChannel with extra! 16 = All, 17 = equal to Out
+				{ 12, TypedNamedValue("USB TX Channel", "MIDI", 0, kMidiChannelLookup) }, // MIDIChannel with extra!
+				{ 13, TypedNamedValue("USB to MIDI through", "MIDI", false) },
+				{ 14, TypedNamedValue("Bass Drum MIDI Note mapping", "Note mapping", 0, 0, 128) },
+				{ 15, TypedNamedValue("Snare Drum MIDI Note mapping", "Note mapping", 0, 0, 128) },
+				{ 16, TypedNamedValue("Low Tom MIDI Note mapping", "Note mapping", 0, 0, 128) },
+				{ 17, TypedNamedValue("Mid Tom MIDI Note mapping", "Note mapping", 0, 0, 128) },
+				{ 18, TypedNamedValue("High Tom MIDI Note mapping", "Note mapping", 0, 0, 128) },
+				{ 19, TypedNamedValue("Rim Shot MIDI Note mapping", "Note mapping", 0, 0, 128) },
+				{ 20, TypedNamedValue("Hand Clap MIDI Note mapping", "Note mapping", 0, 0, 128) },
+				{ 21, TypedNamedValue("Cow Bell MIDI Note mapping", "Note mapping", 0, 0, 128) },
+				{ 22, TypedNamedValue("Cymbal MIDI Note mapping", "Note mapping", 0, 0, 128) },
+				{ 23, TypedNamedValue("Open Hat MIDI Note mapping", "Note mapping", 0, 0, 128) },
+				{ 24, TypedNamedValue("Closed Hat MIDI Note mapping", "Note mapping", 0, 0, 128) },
+			};/*
+				{ 25, "Song mode", "Song Chain Mode", ValueType::Bool, 0, 1},
+				{ 26, "Preferences", "Tempo Preference", ValueType::Lookup, 0, 2, kPreferenceLookup },
+				{ 27, "Preferences", "Swing Preference", ValueType::Lookup,0, 2, kPreferenceLookup },
+				{ 28, "Preferences", "Probability Preference", ValueType::Lookup,0, 2, kPreferenceLookup },
+				{ 29, "Preferences", "Flam Preference", ValueType::Lookup,0, 2, kPreferenceLookup},
+				{ 30, "Preferences", "Filter Mode Preference", ValueType::Lookup,0, 2, kPreferenceLookup},
+				{ 31, "Preferences", "Filter Enable Preference", ValueType::Lookup,0, 2, kPreferenceLookup},
+				{ 32, "Preferences", "Filter Automation Preference", ValueType::Lookup,0, 2, kPreferenceLookup},
+				{ 33, "Preferences", "Polymeter Preference", ValueType::Lookup,0, 2, kPreferenceLookup},
+				{ 34, "Preferences", "Step Size Preference", ValueType::Lookup,0, 2, kPreferenceLookup},
+				{ 35, "Preferences", "Auto Advance Preference", ValueType::Lookup,0, 1, {{0, "Song"}, {1, "Global" }} },
+				{ 36, "Preferences", "Auto Scroll Preference", ValueType::Lookup,1, 2, { {1, "Global" }, { 2, "Pattern" }} },
+				{ 37, "Preferences", "FX Bus Preference", ValueType::Lookup,0, 2, kPreferenceLookup},
+				{ 38, "Preferences", "Mute Preference", ValueType::Lookup,0, 2, kPreferenceLookup},
+				{ 39, "Preferences", "Solo Preference", ValueType::Lookup,0, 2, kPreferenceLookup},
+				{ 40, "Global Settings", "Global Tempo", ValueType::Integer, 20, 240},
+				{ 41, "Global Settings", "Global Swing", ValueType::Integer, 50, 75},
+				{ 42, "Global Settings", "Global Probability", ValueType::Integer, 0, 100},
+				{ 43, "Global Settings", "Global Flam", ValueType::Integer, 0, 24},
+				{ 44, "Global Settings", "Global Filter Mode", ValueType::Bool, 0, 1},
+				{ 45, "Global Settings", "Global Filter Enable", ValueType::Bool, 0, 1},
+				{ 46, "Global Settings", "Global Filter Automation", ValueType::Bool, 0, 1},
+				{ 47, "Global Settings", "Global Filter Steps", ValueType::Integer, 0, 255}, // This is an interesting editor... needs an array var
+				{ 47 + 64 , "Global Settings", "Global Polymeter", ValueType::Bool, 0, 1},
+				{ 47 + 64 + 1 , "Global Settings", "Global Step Size", ValueType::Bool, 0, 1},
+				{ 47 + 64 + 2 , "Global Settings", "Global Auto-Advance", ValueType::Bool, 0, 1},
+				{ 47 + 64 + 3 , "Global Settings", "Global Auto-Scroll", ValueType::Bool, 0, 1},
+				//{ 47 + 64 + 4 , "Global FX Assignments", 0, 1},
+				//{ 47 + 64 + 5 , "Global Mute Assignments", 0, 1},
+				//{ 47 + 64 + 6 , "Global Solo Assignments", 0, 1},
+			};*/
 
 	std::shared_ptr<RD8Pattern::PatternData> RD8Pattern::getPattern() const
 	{
