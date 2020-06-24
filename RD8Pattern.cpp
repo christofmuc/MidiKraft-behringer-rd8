@@ -295,6 +295,8 @@ namespace midikraft {
 		{10, "11" }, { 11, "12" }, { 12, "13" }, { 13, "14" }, { 14, "15" }, { 15, "16" }, { 16, "All (omni)" } };
 
 	std::vector<RD8GlobalSettings::ValueDefinition> RD8GlobalSettings::kGlobalSettingsDefinition = {
+				//{2, "Last Loaded Song"}
+				//{3, "Last Loaded Pattern"}
 				{ 4, TypedNamedValue("Device ID", "General", 0, 0, 15) },
 				{ 5, TypedNamedValue("Clock Source", "General", 0, { {0, "Internal"}, {1, "MIDI" }, { 2, "USB" }, { 3, "Trigger" } }) },
 				{ 6, TypedNamedValue("Analog Clock Mode", "General", 0, { {0, "1 PPQ"}, {1, "2 PPQ" }, { 2, "4 PPQ" }, { 3, "24 PPQ" }, { 4, "48 PPQ" } })  },
