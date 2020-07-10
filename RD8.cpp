@@ -395,7 +395,7 @@ namespace midikraft {
 			}
 
 			if (success) {
-				// Persist the new input channel in the SimpleDiscoverableDevice base class
+				// Persist the new output channel in the SimpleDiscoverableDevice base class
 				outputChannel_ = newChannel;
 				// Send an update message to the device. Sadly, this is the whole settings page with the new channel patched in
 				auto updatedMessage = MidiHelpers::bufferFromMessages(settings->dataToSysex());
